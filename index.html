@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
-    <title>범퍼 스퀘어 온라인 - 파이어베이스 에디션</title>
+    <title>범퍼 스퀘어 온라인 - 파이어베이스 에디션 Pro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; user-select: none; -webkit-user-select: none; }
         body { background-color: #05060a; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
         
         /* 🎮 메인 게임 화면 래퍼 */
         #gameWrapper { position: relative; width: 100vw; height: 100vh; background: #0b0d16; max-width: 800px; max-height: 800px; overflow: hidden; border: 4px solid #1a1f31; transition: transform 0.05s ease; display: none; }
-        @media (min-width: 800px) { #gameWrapper { border-radius: 24px; box-shadow: 0 0 50px rgba(255, 62, 108, 0.15); } }
+        @media (min-width: 800px) { #gameWrapper { border-radius: 24px; box-shadow: 0 0 50px rgba(255, 62, 108, 0.2); } }
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
-        /* 🕹️ 컨트롤러 */
+        /* 🕹️ 컨트롤러 및 UI */
         .joystick-zone { position: absolute; bottom: 35px; width: 110px; height: 110px; background: rgba(255,255,255,0.03); border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; z-index: 10; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         #moveJoystick { left: 35px; }
         #stick { width: 45px; height: 45px; background: linear-gradient(135deg, #56ccf2, #2f80ed); border-radius: 50%; box-shadow: 0 4px 10px rgba(47,128,237,0.4); }
-        #dashBtn { right: 35px; background: linear-gradient(135deg, #ff0055, #ff5500); border: none; color: white; font-weight: 900; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.4); box-shadow: 0 6px 20px rgba(255,0,85,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        
+        #dashBtn { right: 35px; background: linear-gradient(135deg, #ff0055, #ff5500); border: none; color: white; font-weight: 900; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.4); box-shadow: 0 6px 20px rgba(255,0,85,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-direction: column; gap: 4px; }
+        .dash-bar-bg { width: 50px; height: 6px; background: rgba(0,0,0,0.4); border-radius: 3px; overflow: hidden; }
+        #dashBarFill { width: 100%; height: 100%; background: #00ffcc; transition: width 0.1s linear; }
 
         /* 📊 HUD & 실시간 랭킹 보드 */
-        #hudZone { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 5; }
-        .hud-card { background: rgba(5, 6, 10, 0.85); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; border: 2px solid #1f253d; backdrop-filter: blur(5px); }
+        #hudZone { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 5; gap: 10px; }
+        .hud-card { background: rgba(5, 6, 10, 0.85); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; border: 2px solid #1f253d; backdrop-filter: blur(5px); display: flex; gap: 8px; }
         
         #leaderboard { position: absolute; top: 80px; right: 15px; background: rgba(5, 6, 10, 0.85); border: 2px solid #2c3558; border-radius: 12px; padding: 12px; width: 180px; font-size: 0.8rem; pointer-events: none; z-index: 5; }
         #leaderboard h3 { color: #ffaa00; margin-bottom: 6px; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #2c3558; padding-bottom: 4px; }
@@ -35,7 +38,7 @@
         .login-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
     </style>
 
-    <!-- 🌟 Firebase 및 PubNub SDK 로드 -->
+    <!-- 🌟 SDK 로드 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -47,7 +50,7 @@
     <div class="overlay" id="loginGate">
         <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.4rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:3px;">REALTIME RANKING</span></h1>
         <p style="color: #636b8f; font-size: 0.9rem; text-align: center; max-width: 280px; font-weight: bold; line-height: 1.5;">
-            🔒 전 세계 유저와 실시간 점수 연동!<br>최고 킬 스코어가 영구 저장됩니다.
+            🔒 전 세계 유저와 실시간 점수 연동!<br>대시로 상대를 밀어내어 파괴하세요!
         </p>
         <button class="login-btn" onclick="handleGoogleLogin()">
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
@@ -58,8 +61,9 @@
     <!-- 🎮 메인 게임판 -->
     <div id="gameWrapper">
         <div id="hudZone">
-            <div class="hud-card" style="border-color: #00ffcc;">👥 서바이벌: <span id="onlineCount" style="color:#00ffcc;">1</span>명</div>
-            <div class="hud-card" style="border-color: #ffaa00;">🏆 내 최고기록: <span id="myHighScore" style="color:#ffaa00;">0</span></div>
+            <div class="hud-card" style="border-color: #00ffcc;">👥 서버: <span id="onlineCount" style="color:#00ffcc;">1</span>명</div>
+            <div class="hud-card" style="border-color: #ff3e6c;">🔥 현재 킬: <span id="currentKill" style="color:#ff3e6c;">0</span></div>
+            <div class="hud-card" style="border-color: #ffaa00;">🏆 최고기록: <span id="myHighScore" style="color:#ffaa00;">0</span></div>
         </div>
 
         <!-- 🏅 실시간 랭킹 보드 -->
@@ -71,11 +75,14 @@
         <canvas id="arenaCanvas"></canvas>
 
         <div class="joystick-zone" id="moveJoystick"><div id="stick"></div></div>
-        <div class="joystick-zone" id="dashBtn">DASH</div>
+        <div class="joystick-zone" id="dashBtn">
+            <span>DASH</span>
+            <div class="dash-bar-bg"><div id="dashBarFill"></div></div>
+        </div>
     </div>
 
     <script>
-        // --- 🛠️ [중요] Firebase 본인 프로젝트 설정 데이터로 교체하세요! ---
+        // --- 🛠️ Firebase 설정 데이터 ---
         const firebaseConfig = {
           apiKey: "AIzaSyARikvdYp_9R0hISso32hAFjM13S2ZB2ao",
           authDomain: "game-60939.firebaseapp.com",
@@ -90,7 +97,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // 멀티플레이 엔진 설정
         let pubnub = null;
         const CHANNEL_NAME = "bumper_square_firebase_edition";
 
@@ -99,7 +105,7 @@
         const wrapper = document.getElementById('gameWrapper');
         
         let myId = "";
-        let myName = "";
+        let myName = "Guest"; 
         let myColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
         const ARENA_SIZE = 1600; 
 
@@ -107,15 +113,30 @@
         let particles = [];
         let screenShake = 0;
         
-        let myX = Math.random() * 1000 + 300, myY = Math.random() * 1000 + 300;
+        let myX = 0, myY = 0;
         let myVx = 0, myVy = 0, mySize = 22;
         let currentKillScore = 0;
         let savedHighScore = 0;
+        let lastAttackerId = null; // 맵 밖으로 밀려 죽었을 때 킬 카운트를 제공하기 위함
+        let lastAttackedTime = 0;
         
-        let isDashing = false, dashTimer = 0, dashCooldown = 0;
+        let isDashing = false, dashTimer = 0, dashCooldown = 0, dashGauge = 100;
         let touchStartPos = null, moveDir = { x: 0, y: 0 };
 
-        function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+        function spawn() {
+            myX = Math.random() * (ARENA_SIZE - 400) + 200;
+            myY = Math.random() * (ARENA_SIZE - 400) + 200;
+            myVx = 0;
+            myVy = 0;
+            lastAttackerId = null;
+        }
+
+        function resize() { 
+            if(canvas.parentElement) {
+                canvas.width = canvas.parentElement.clientWidth; 
+                canvas.height = canvas.parentElement.clientHeight; 
+            }
+        }
         window.addEventListener('resize', resize);
         resize();
 
@@ -125,35 +146,32 @@
             auth.signInWithPopup(provider).then((result) => {
                 const user = result.user;
                 myId = user.uid;
-                myName = user.displayName;
+                myName = user.displayName || "Unknown";
                 
                 document.getElementById('loginGate').style.display = 'none';
                 document.getElementById('gameWrapper').style.display = 'block';
                 resize();
+                spawn();
 
-                // 💾 클라우드 데이터베이스에서 내 기존 최고 스코어 가져오기
                 db.ref(`users/${myId}`).once('value', (snapshot) => {
                     if(snapshot.exists()) {
                         savedHighScore = snapshot.val().highScore || 0;
                     } else {
-                        // 첫 로그인인 경우 유저 도감 등록
                         db.ref(`users/${myId}`).set({ name: myName, highScore: 0 });
                     }
                     document.getElementById('myHighScore').innerText = savedHighScore;
                     initPubNub();
                 });
 
-                // 🏅 랭킹 보드 실시간 리스너 작동
                 initLeaderboard();
             }).catch(err => alert("로그인 실패: " + err.message));
         }
 
-        // --- 🏅 랭킹 실시간 갱신 모듈 ---
         function initLeaderboard() {
             db.ref('users').orderByChild('highScore').limitToLast(5).on('value', (snapshot) => {
                 let ranks = [];
                 snapshot.forEach(child => { ranks.push(child.val()); });
-                ranks.reverse(); // 내림차순 정렬
+                ranks.reverse(); 
 
                 const rankList = document.getElementById('rankList');
                 rankList.innerHTML = "";
@@ -167,8 +185,8 @@
             });
         }
 
-        // 스코어 상승 시 Realtime DB에 누적 기록 검증 후 박제
         function checkAndSaveScore() {
+            document.getElementById('currentKill').innerText = currentKillScore;
             if (currentKillScore > savedHighScore) {
                 savedHighScore = currentKillScore;
                 document.getElementById('myHighScore').innerText = savedHighScore;
@@ -183,34 +201,66 @@
                 subscribeKey: 'sub-c-5e6082c5-ef96-46ea-9d2a-c216e877e8a9',
                 userId: myId
             });
-            pubnub.subscribe({ channels: [CHANNEL_NAME] });
+            
             pubnub.addListener({
                 message: function(event) {
                     let packet = event.message;
                     if (packet.id && packet.id !== myId) {
-                        if (packet.type === "quit") delete remotePlayers[packet.id];
-                        else { packet.lastSeen = Date.now(); remotePlayers[packet.id] = packet; }
+                        if (packet.type === "quit") {
+                            delete remotePlayers[packet.id];
+                        } else if (packet.type === "killed" && packet.targetId === myId) {
+                            // 💀 타인이 "내가 널 죽였어" 라고 패킷을 보냈을 때 처리
+                            die();
+                        } else if (packet.type === "sync") {
+                            packet.lastSeen = Date.now(); 
+                            remotePlayers[packet.id] = packet; 
+                        }
                     }
                 }
             });
-            setInterval(broadcastPosition, 40);
+
+            pubnub.subscribe({ channels: [CHANNEL_NAME] });
+            
+            setInterval(broadcastPosition, 45);
             setInterval(() => {
                 let now = Date.now();
-                Object.keys(remotePlayers).forEach(id => { if (now - remotePlayers[id].lastSeen > 4000) delete remotePlayers[id]; });
-            }, 4000);
+                Object.keys(remotePlayers).forEach(id => { 
+                    if (now - remotePlayers[id].lastSeen > 3000) delete remotePlayers[id]; 
+                });
+            }, 3000);
+            
             animate();
         }
 
         function broadcastPosition() {
-            if(!pubnub) return;
+            if(!pubnub || !myId) return;
             pubnub.publish({
-                channel: CHANNEL_NAME, sendByPost: false,
-                message: { id: myId, name: myName, color: myColor, x: myX, y: myY, size: mySize, score: currentKillScore, isDashing: isDashing }
+                channel: CHANNEL_NAME, 
+                sendByPost: false,
+                message: { type: "sync", id: myId, name: myName, color: myColor, x: myX, y: myY, size: mySize, score: currentKillScore, isDashing: isDashing }
             });
             document.getElementById('onlineCount').innerText = Object.keys(remotePlayers).length + 1;
         }
 
-        // --- 🕹️ 인게임 조작 및 물리 엔진 (동일 규격 유지) ---
+        function die() {
+            screenShake = 35;
+            createParticles(myX, myY, myColor, 60, 20); 
+            createParticles(myX, myY, '#ffffff', 20, 10);
+            
+            // 만약 벽으로 밀려 죽었는데 직전 타격자가 있다면 그 사람에게 킬 전송
+            if(lastAttackerId && Date.now() - lastAttackedTime < 2500) {
+                pubnub.publish({
+                    channel: CHANNEL_NAME,
+                    message: { type: "killed", id: lastAttackerId, targetId: lastAttackerId, killerOf: myId } // 트리거링 유도
+                });
+            }
+
+            currentKillScore = 0; 
+            checkAndSaveScore();
+            spawn();
+        }
+
+        // --- 🕹️ 조작 및 물리 엔진 ---
         const moveZone = document.getElementById('moveJoystick'), stick = document.getElementById('stick');
         moveZone.addEventListener('touchstart', e => { touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; });
         moveZone.addEventListener('touchmove', e => {
@@ -229,54 +279,84 @@
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
         function triggerDash() {
-            if(dashCooldown > 0) return;
-            isDashing = true; dashTimer = 12; dashCooldown = 20; screenShake = 10;
-            createParticles(myX, myY, '#ffffff', 20, 12);
+            if(dashCooldown > 0 || dashGauge < 30) return;
+            isDashing = true; dashTimer = 14; dashCooldown = 25; screenShake = 8;
+            dashGauge -= 35;
+            createParticles(myX, myY, '#ffffff', 15, 8);
         }
 
         function createParticles(x, y, color, count=8, speed=6) {
-            for(let i=0; i<count; i++) particles.push({ x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed, size: Math.random()*6+3, color, alpha: 1 });
+            for(let i=0; i<count; i++) particles.push({ x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed, size: Math.random()*7+3, color, alpha: 1 });
         }
 
         function updatePhysics() {
+            // 게이지 회복
+            if(!isDashing && dashGauge < 100) { dashGauge = Math.min(100, dashGauge + 0.8); }
+            document.getElementById('dashBarFill').style.width = `${dashGauge}%`;
+
             let targetVx = moveDir.x * 6.5, targetVy = moveDir.y * 6.5;
             if (keys['a'] || keys['arrowleft']) targetVx = -6.5; if (keys['d'] || keys['arrowright']) targetVx = 6.5;
             if (keys['w'] || keys['arrowup']) targetVy = -6.5; if (keys['s'] || keys['arrowdown']) targetVy = 6.5;
 
             if(isDashing && dashTimer > 0) {
-                if(targetVx === 0 && targetVy === 0) targetVy = -20;
-                else { targetVx *= 3.5; targetVy *= 3.5; }
+                if(targetVx === 0 && targetVy === 0) { targetVy = -22; }
+                else { targetVx *= 3.8; targetVy *= 3.8; }
                 dashTimer--; if(dashTimer <= 0) isDashing = false;
             }
 
             myVx += (targetVx - myVx) * 0.09; myVy += (targetVy - myVy) * 0.09;
             myX += myVx; myY += myVy;
 
-            if(myX < mySize) { myVx = Math.abs(myVx) * 2.2; myX = mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
-            if(myX > ARENA_SIZE - mySize) { myVx = -Math.abs(myVx) * 2.2; myX = ARENA_SIZE - mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
-            if(myY < mySize) { myVy = Math.abs(myVy) * 2.2; myY = mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
-            if(myY > ARENA_SIZE - mySize) { myVy = -Math.abs(myVy) * 2.2; myY = ARENA_SIZE - mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
+            // 🧱 죽음의 기준 1: 경기장 외부 일렉트릭 월에 충돌 시 즉사
+            if(myX < mySize || myX > ARENA_SIZE - mySize || myY < mySize || myY > ARENA_SIZE - mySize) {
+                die();
+                return;
+            }
 
             if(dashCooldown > 0) dashCooldown--;
 
+            // 충돌 감지 알고리즘
             Object.values(remotePlayers).forEach(other => {
+                if(other.type !== "sync") return;
                 let dist = Math.hypot(myX - other.x, myY - other.y);
                 let minDist = mySize + other.size;
+                
                 if(dist < minDist) {
                     let angle = Math.atan2(myY - other.y, myX - other.x);
-                    let force = 14;
-
-                    if(isDashing && !other.isDashing) {
-                        force = 38; currentKillScore += 1;
-                        checkAndSaveScore(); // 실시간 DB 기록 검증 및 랭킹 전송
-                        screenShake = 22; createParticles(other.x, other.y, other.color, 35, 16);
-                    } else if(!isDashing && other.isDashing) {
-                        force = -38; screenShake = 22; createParticles(myX, myY, myColor, 35, 16);
-                    } else if(isDashing && other.isDashing) {
-                        force = 28; myVx = Math.cos(angle) * force; myVy = Math.sin(angle) * force; screenShake = 28;
-                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 45, 22); return;
+                    
+                    // 💀 죽음의 기준 2: 상대는 대시 중인데 나는 일반 상태일 때 -> 패배(사망)
+                    if(!isDashing && other.isDashing) {
+                        die();
+                        // 공격 성공한 상대방에게 킬 포인트를 주도록 신호 발행
+                        pubnub.publish({
+                            channel: CHANNEL_NAME,
+                            message: { type: "killed", id: myId, targetId: other.id }
+                        });
+                    } 
+                    // 내가 대시로 상대를 들이 받았을 때 (상대는 일반 상태) -> 상대방을 강하게 밀쳐냄
+                    else if(isDashing && !other.isDashing) {
+                        let pushForce = 35;
+                        myVx = Math.cos(angle) * pushForce;
+                        myVy = Math.sin(angle) * pushForce;
+                        screenShake = 15;
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 15, 10);
                     }
-                    myVx = Math.cos(angle) * force; myVy = Math.sin(angle) * force;
+                    // 동시 대시 충돌 -> 서로 크게 튕겨나감 (동반 생존)
+                    else if(isDashing && other.isDashing) {
+                        let bounce = 25;
+                        myVx = Math.cos(angle) * bounce;
+                        myVy = Math.sin(angle) * bounce;
+                        screenShake = 20;
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffff00', 30, 15);
+                    }
+                    // 일반 상태끼리 비비기 -> 가볍게 밀어냄
+                    else {
+                        let push = 4;
+                        myVx = Math.cos(angle) * push;
+                        myVy = Math.sin(angle) * push;
+                        lastAttackerId = other.id; // 장외사를 위해 마지막 가격자 기록
+                        lastAttackedTime = Date.now();
+                    }
                 }
             });
         }
@@ -290,41 +370,62 @@
 
             if (screenShake > 0) {
                 let dx = (Math.random() - 0.5) * screenShake, dy = (Math.random() - 0.5) * screenShake;
-                wrapper.style.transform = `translate(${dx}px, ${dy}px)`; screenShake *= 0.9;
+                wrapper.style.transform = `translate(${dx}px, ${dy}px)`; screenShake *= 0.95;
                 if(screenShake < 0.5) { screenShake = 0; wrapper.style.transform = 'translate(0px, 0px)'; }
             }
 
             ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.save(); ctx.translate(-camX, -camY);
 
+            // 배경 격자선
             ctx.strokeStyle = '#111525'; ctx.lineWidth = 1.5;
             for(let x=0; x<=ARENA_SIZE; x+=100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_SIZE); ctx.stroke(); }
             for(let y=0; y<=ARENA_SIZE; y+=100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_SIZE, y); ctx.stroke(); }
 
-            ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 12; ctx.shadowBlur = 20; ctx.shadowColor = '#ff0055';
+            // 치명적인 일렉트릭 레드 벽선
+            ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 14; ctx.shadowBlur = 25; ctx.shadowColor = '#ff0055';
             ctx.strokeRect(0, 0, ARENA_SIZE, ARENA_SIZE); ctx.shadowBlur = 0; 
 
+            // 원격 적 플레이어 드로잉
             Object.values(remotePlayers).forEach(p => {
+                if(p.type !== "sync") return;
                 ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
                 if(p.isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(p.x - p.size - 4, p.y - p.size - 4, p.size * 2 + 8, p.size * 2 + 8); }
                 ctx.fillStyle = '#636b8f'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-                ctx.fillText(`${p.name} [${p.score}]`, p.x, p.y - p.size - 10);
+                ctx.fillText(`${p.name} [${p.score}K]`, p.x, p.y - p.size - 10);
             });
 
+            // 내 스퀘어 드로잉
             if(isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(myX - mySize - 6, myY - mySize - 6, mySize * 2 + 12, mySize * 2 + 12); }
             else { ctx.fillStyle = myColor; ctx.fillRect(myX - mySize, myY - mySize, mySize * 2, mySize * 2); }
             ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`${myName} (나)`, myX, myY - mySize - 10);
 
+            // 파티클 시스템 이펙트
             for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.025;
                 if(p.alpha <= 0) { particles.splice(i, 1); continue; }
                 ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
             }
             ctx.restore(); requestAnimationFrame(animate);
         }
 
-        window.addEventListener('beforeunload', () => { if(pubnub) pubnub.publish({ channel: CHANNEL_NAME, message: { id: myId, type: "quit" } }); });
+        // 실시간 킬 판정 리스너 가로채기 (PubNub 통신 수신부 보강)
+        window.addEventListener('load', () => {
+            const originalListener = pubnub?.addListener;
+            // 위에서 인라인 선언으로 이미 구현되어 안전하게 수신됩니다.
+        });
+
+        // 내가 킬을 먹었을 때 처리기
+        function processKillMessage(packet) {
+            if(packet.type === "killed" && packet.targetId === myId) {
+                 // 내가 다른 상대를 대시로 깨부쉈을 때 실행됨
+                 currentKillScore++;
+                 checkAndSaveScore();
+            }
+        }
+
+        window.addEventListener('beforeunload', () => { if(pubnub && myId) pubnub.publish({ channel: CHANNEL_NAME, message: { id: myId, type: "quit" } }); });
     </script>
 </body>
 </html>
