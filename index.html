@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>범퍼 스퀘어 온라인 - 파이어베이스 에디션</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; user-select: none; -webkit-user-select: none; }
+        body { background-color: #05060a; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
+        
+        /* 🎮 메인 게임 화면 래퍼 */
+        #gameWrapper { position: relative; width: 100vw; height: 100vh; background: #0b0d16; max-width: 800px; max-height: 800px; overflow: hidden; border: 4px solid #1a1f31; transition: transform 0.05s ease; display: none; }
+        @media (min-width: 800px) { #gameWrapper { border-radius: 24px; box-shadow: 0 0 50px rgba(255, 62, 108, 0.15); } }
+        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+        /* 🕹️ 컨트롤러 */
+        .joystick-zone { position: absolute; bottom: 35px; width: 110px; height: 110px; background: rgba(255,255,255,0.03); border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; z-index: 10; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        #moveJoystick { left: 35px; }
+        #stick { width: 45px; height: 45px; background: linear-gradient(135deg, #56ccf2, #2f80ed); border-radius: 50%; box-shadow: 0 4px 10px rgba(47,128,237,0.4); }
+        #dashBtn { right: 35px; background: linear-gradient(135deg, #ff0055, #ff5500); border: none; color: white; font-weight: 900; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.4); box-shadow: 0 6px 20px rgba(255,0,85,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+
+        /* 📊 HUD & 실시간 랭킹 보드 */
+        #hudZone { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 5; }
+        .hud-card { background: rgba(5, 6, 10, 0.85); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; border: 2px solid #1f253d; backdrop-filter: blur(5px); }
+        
+        #leaderboard { position: absolute; top: 80px; right: 15px; background: rgba(5, 6, 10, 0.85); border: 2px solid #2c3558; border-radius: 12px; padding: 12px; width: 180px; font-size: 0.8rem; pointer-events: none; z-index: 5; }
+        #leaderboard h3 { color: #ffaa00; margin-bottom: 6px; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #2c3558; padding-bottom: 4px; }
+        .rank-item { display: flex; justify-content: space-between; margin: 4px 0; font-weight: bold; }
+
+        /* 🚪 구글 로그인 게이트 스크린 */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #05060a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 25px; z-index: 20; }
+        .game-title { font-size: 2.8rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 15px rgba(0,255,204,0.3)); }
+        
+        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.15); transition: 0.2s; }
+        .login-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
+    </style>
+
+    <!-- 🌟 Firebase 및 PubNub SDK 로드 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
+</head>
+<body>
+
+    <!-- 🚪 로그인 화면 -->
+    <div class="overlay" id="loginGate">
+        <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.4rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:3px;">REALTIME RANKING</span></h1>
+        <p style="color: #636b8f; font-size: 0.9rem; text-align: center; max-width: 280px; font-weight: bold; line-height: 1.5;">
+            🔒 전 세계 유저와 실시간 점수 연동!<br>최고 킬 스코어가 영구 저장됩니다.
+        </p>
+        <button class="login-btn" onclick="handleGoogleLogin()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
+            Google 계정으로 로그인
+        </button>
+    </div>
+
+    <!-- 🎮 메인 게임판 -->
+    <div id="gameWrapper">
+        <div id="hudZone">
+            <div class="hud-card" style="border-color: #00ffcc;">👥 서바이벌: <span id="onlineCount" style="color:#00ffcc;">1</span>명</div>
+            <div class="hud-card" style="border-color: #ffaa00;">🏆 내 최고기록: <span id="myHighScore" style="color:#ffaa00;">0</span></div>
+        </div>
+
+        <!-- 🏅 실시간 랭킹 보드 -->
+        <div id="leaderboard">
+            <h3>🔥 실시간 TOP 5</h3>
+            <div id="rankList"></div>
+        </div>
+
+        <canvas id="arenaCanvas"></canvas>
+
+        <div class="joystick-zone" id="moveJoystick"><div id="stick"></div></div>
+        <div class="joystick-zone" id="dashBtn">DASH</div>
+    </div>
+
+    <script>
+        // --- 🛠️ [중요] Firebase 본인 프로젝트 설정 데이터로 교체하세요! ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // 멀티플레이 엔진 설정
+        let pubnub = null;
+        const CHANNEL_NAME = "bumper_square_firebase_edition";
+
+        const canvas = document.getElementById('arenaCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('gameWrapper');
+        
+        let myId = "";
+        let myName = "";
+        let myColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
+        const ARENA_SIZE = 1600; 
+
+        let remotePlayers = {};  
+        let particles = [];
+        let screenShake = 0;
+        
+        let myX = Math.random() * 1000 + 300, myY = Math.random() * 1000 + 300;
+        let myVx = 0, myVy = 0, mySize = 22;
+        let currentKillScore = 0;
+        let savedHighScore = 0;
+        
+        let isDashing = false, dashTimer = 0, dashCooldown = 0;
+        let touchStartPos = null, moveDir = { x: 0, y: 0 };
+
+        function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- 🔐 구글 로그인 및 데이터 로드 ---
+        function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                const user = result.user;
+                myId = user.uid;
+                myName = user.displayName;
+                
+                document.getElementById('loginGate').style.display = 'none';
+                document.getElementById('gameWrapper').style.display = 'block';
+                resize();
+
+                // 💾 클라우드 데이터베이스에서 내 기존 최고 스코어 가져오기
+                db.ref(`users/${myId}`).once('value', (snapshot) => {
+                    if(snapshot.exists()) {
+                        savedHighScore = snapshot.val().highScore || 0;
+                    } else {
+                        // 첫 로그인인 경우 유저 도감 등록
+                        db.ref(`users/${myId}`).set({ name: myName, highScore: 0 });
+                    }
+                    document.getElementById('myHighScore').innerText = savedHighScore;
+                    initPubNub();
+                });
+
+                // 🏅 랭킹 보드 실시간 리스너 작동
+                initLeaderboard();
+            }).catch(err => alert("로그인 실패: " + err.message));
+        }
+
+        // --- 🏅 랭킹 실시간 갱신 모듈 ---
+        function initLeaderboard() {
+            db.ref('users').orderByChild('highScore').limitToLast(5).on('value', (snapshot) => {
+                let ranks = [];
+                snapshot.forEach(child => { ranks.push(child.val()); });
+                ranks.reverse(); // 내림차순 정렬
+
+                const rankList = document.getElementById('rankList');
+                rankList.innerHTML = "";
+                ranks.forEach((user, index) => {
+                    rankList.innerHTML += `
+                        <div class="rank-item">
+                            <span>${index+1}. ${user.name}</span>
+                            <span style="color:#ffaa00;">${user.highScore}K</span>
+                        </div>`;
+                });
+            });
+        }
+
+        // 스코어 상승 시 Realtime DB에 누적 기록 검증 후 박제
+        function checkAndSaveScore() {
+            if (currentKillScore > savedHighScore) {
+                savedHighScore = currentKillScore;
+                document.getElementById('myHighScore').innerText = savedHighScore;
+                db.ref(`users/${myId}`).update({ highScore: savedHighScore });
+            }
+        }
+
+        // --- 🌐 멀티플레이 P2P 세션 연동 ---
+        function initPubNub() {
+            pubnub = new PubNub({
+                publishKey: 'pub-c-4934d400-3580-48e0-bbcc-04e4022a10d9',
+                subscribeKey: 'sub-c-5e6082c5-ef96-46ea-9d2a-c216e877e8a9',
+                userId: myId
+            });
+            pubnub.subscribe({ channels: [CHANNEL_NAME] });
+            pubnub.addListener({
+                message: function(event) {
+                    let packet = event.message;
+                    if (packet.id && packet.id !== myId) {
+                        if (packet.type === "quit") delete remotePlayers[packet.id];
+                        else { packet.lastSeen = Date.now(); remotePlayers[packet.id] = packet; }
+                    }
+                }
+            });
+            setInterval(broadcastPosition, 40);
+            setInterval(() => {
+                let now = Date.now();
+                Object.keys(remotePlayers).forEach(id => { if (now - remotePlayers[id].lastSeen > 4000) delete remotePlayers[id]; });
+            }, 4000);
+            animate();
+        }
+
+        function broadcastPosition() {
+            if(!pubnub) return;
+            pubnub.publish({
+                channel: CHANNEL_NAME, sendByPost: false,
+                message: { id: myId, name: myName, color: myColor, x: myX, y: myY, size: mySize, score: currentKillScore, isDashing: isDashing }
+            });
+            document.getElementById('onlineCount').innerText = Object.keys(remotePlayers).length + 1;
+        }
+
+        // --- 🕹️ 인게임 조작 및 물리 엔진 (동일 규격 유지) ---
+        const moveZone = document.getElementById('moveJoystick'), stick = document.getElementById('stick');
+        moveZone.addEventListener('touchstart', e => { touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; });
+        moveZone.addEventListener('touchmove', e => {
+            if (!touchStartPos) return;
+            let dx = e.touches[0].clientX - touchStartPos.x, dy = e.touches[0].clientY - touchStartPos.y;
+            let dist = Math.hypot(dx, dy), maxDist = 40;
+            if (dist > maxDist) { dx = (dx / dist) * maxDist; dy = (dy / dist) * maxDist; }
+            stick.style.transform = `translate(${dx}px, ${dy}px)`;
+            moveDir = { x: dx / maxDist, y: dy / maxDist };
+        });
+        moveZone.addEventListener('touchend', () => { touchStartPos = null; stick.style.transform = `translate(0px, 0px)`; moveDir = { x: 0, y: 0 }; });
+        document.getElementById('dashBtn').addEventListener('touchstart', e => { e.preventDefault(); triggerDash(); });
+
+        let keys = {};
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') triggerDash(); });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        function triggerDash() {
+            if(dashCooldown > 0) return;
+            isDashing = true; dashTimer = 12; dashCooldown = 20; screenShake = 10;
+            createParticles(myX, myY, '#ffffff', 20, 12);
+        }
+
+        function createParticles(x, y, color, count=8, speed=6) {
+            for(let i=0; i<count; i++) particles.push({ x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed, size: Math.random()*6+3, color, alpha: 1 });
+        }
+
+        function updatePhysics() {
+            let targetVx = moveDir.x * 6.5, targetVy = moveDir.y * 6.5;
+            if (keys['a'] || keys['arrowleft']) targetVx = -6.5; if (keys['d'] || keys['arrowright']) targetVx = 6.5;
+            if (keys['w'] || keys['arrowup']) targetVy = -6.5; if (keys['s'] || keys['arrowdown']) targetVy = 6.5;
+
+            if(isDashing && dashTimer > 0) {
+                if(targetVx === 0 && targetVy === 0) targetVy = -20;
+                else { targetVx *= 3.5; targetVy *= 3.5; }
+                dashTimer--; if(dashTimer <= 0) isDashing = false;
+            }
+
+            myVx += (targetVx - myVx) * 0.09; myVy += (targetVy - myVy) * 0.09;
+            myX += myVx; myY += myVy;
+
+            if(myX < mySize) { myVx = Math.abs(myVx) * 2.2; myX = mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
+            if(myX > ARENA_SIZE - mySize) { myVx = -Math.abs(myVx) * 2.2; myX = ARENA_SIZE - mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
+            if(myY < mySize) { myVy = Math.abs(myVy) * 2.2; myY = mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
+            if(myY > ARENA_SIZE - mySize) { myVy = -Math.abs(myVy) * 2.2; myY = ARENA_SIZE - mySize; screenShake = 12; createParticles(myX, myY, '#ff0055', 12); }
+
+            if(dashCooldown > 0) dashCooldown--;
+
+            Object.values(remotePlayers).forEach(other => {
+                let dist = Math.hypot(myX - other.x, myY - other.y);
+                let minDist = mySize + other.size;
+                if(dist < minDist) {
+                    let angle = Math.atan2(myY - other.y, myX - other.x);
+                    let force = 14;
+
+                    if(isDashing && !other.isDashing) {
+                        force = 38; currentKillScore += 1;
+                        checkAndSaveScore(); // 실시간 DB 기록 검증 및 랭킹 전송
+                        screenShake = 22; createParticles(other.x, other.y, other.color, 35, 16);
+                    } else if(!isDashing && other.isDashing) {
+                        force = -38; screenShake = 22; createParticles(myX, myY, myColor, 35, 16);
+                    } else if(isDashing && other.isDashing) {
+                        force = 28; myVx = Math.cos(angle) * force; myVy = Math.sin(angle) * force; screenShake = 28;
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 45, 22); return;
+                    }
+                    myVx = Math.cos(angle) * force; myVy = Math.sin(angle) * force;
+                }
+            });
+        }
+
+        // --- 🎨 렌더링 루프 ---
+        let camX = 0, camY = 0;
+        function animate() {
+            updatePhysics();
+            camX += (myX - canvas.width / 2 - camX) * 0.15; camY += (myY - canvas.height / 2 - camY) * 0.15;
+            camX = Math.max(0, Math.min(ARENA_SIZE - canvas.width, camX)); camY = Math.max(0, Math.min(ARENA_SIZE - canvas.height, camY));
+
+            if (screenShake > 0) {
+                let dx = (Math.random() - 0.5) * screenShake, dy = (Math.random() - 0.5) * screenShake;
+                wrapper.style.transform = `translate(${dx}px, ${dy}px)`; screenShake *= 0.9;
+                if(screenShake < 0.5) { screenShake = 0; wrapper.style.transform = 'translate(0px, 0px)'; }
+            }
+
+            ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); ctx.translate(-camX, -camY);
+
+            ctx.strokeStyle = '#111525'; ctx.lineWidth = 1.5;
+            for(let x=0; x<=ARENA_SIZE; x+=100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_SIZE); ctx.stroke(); }
+            for(let y=0; y<=ARENA_SIZE; y+=100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_SIZE, y); ctx.stroke(); }
+
+            ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 12; ctx.shadowBlur = 20; ctx.shadowColor = '#ff0055';
+            ctx.strokeRect(0, 0, ARENA_SIZE, ARENA_SIZE); ctx.shadowBlur = 0; 
+
+            Object.values(remotePlayers).forEach(p => {
+                ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
+                if(p.isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(p.x - p.size - 4, p.y - p.size - 4, p.size * 2 + 8, p.size * 2 + 8); }
+                ctx.fillStyle = '#636b8f'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(`${p.name} [${p.score}]`, p.x, p.y - p.size - 10);
+            });
+
+            if(isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(myX - mySize - 6, myY - mySize - 6, mySize * 2 + 12, mySize * 2 + 12); }
+            else { ctx.fillStyle = myColor; ctx.fillRect(myX - mySize, myY - mySize, mySize * 2, mySize * 2); }
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(`${myName} (나)`, myX, myY - mySize - 10);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
+                if(p.alpha <= 0) { particles.splice(i, 1); continue; }
+                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
+            }
+            ctx.restore(); requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('beforeunload', () => { if(pubnub) pubnub.publish({ channel: CHANNEL_NAME, message: { id: myId, type: "quit" } }); });
+    </script>
+</body>
+</html>
