@@ -3,56 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
-    <title>범퍼 스퀘어 온라인 - 파이어베이스 에디션 Pro</title>
+    <title>범퍼 스퀘어 프로 - 갓겜 패치 에디션</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; user-select: none; -webkit-user-select: none; }
         body { background-color: #05060a; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
         
-        /* 🎮 메인 게임 화면 래퍼 */
+        /* 🎮 게임 화면 래퍼 */
         #gameWrapper { position: relative; width: 100vw; height: 100vh; background: #0b0d16; max-width: 800px; max-height: 800px; overflow: hidden; border: 4px solid #1a1f31; transition: transform 0.05s ease; display: none; }
-        @media (min-width: 800px) { #gameWrapper { border-radius: 24px; box-shadow: 0 0 50px rgba(255, 62, 108, 0.2); } }
+        @media (min-width: 800px) { #gameWrapper { border-radius: 24px; box-shadow: 0 0 60px rgba(0, 255, 204, 0.15); } }
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
-        /* 🕹️ 컨트롤러 및 UI */
+        /* 🕹️ 컨트롤러 및 HUD */
         .joystick-zone { position: absolute; bottom: 35px; width: 110px; height: 110px; background: rgba(255,255,255,0.03); border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; z-index: 10; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         #moveJoystick { left: 35px; }
-        #stick { width: 45px; height: 45px; background: linear-gradient(135deg, #56ccf2, #2f80ed); border-radius: 50%; box-shadow: 0 4px 10px rgba(47,128,237,0.4); }
+        #stick { width: 45px; height: 45px; background: linear-gradient(135deg, #00ffcc, #0055ff); border-radius: 50%; box-shadow: 0 4px 12px rgba(0,255,204,0.4); }
         
         #dashBtn { right: 35px; background: linear-gradient(135deg, #ff0055, #ff5500); border: none; color: white; font-weight: 900; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.4); box-shadow: 0 6px 20px rgba(255,0,85,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-direction: column; gap: 4px; }
         .dash-bar-bg { width: 50px; height: 6px; background: rgba(0,0,0,0.4); border-radius: 3px; overflow: hidden; }
         #dashBarFill { width: 100%; height: 100%; background: #00ffcc; transition: width 0.1s linear; }
 
-        /* 📊 HUD & 실시간 랭킹 보드 */
         #hudZone { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 5; gap: 10px; }
-        .hud-card { background: rgba(5, 6, 10, 0.85); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; border: 2px solid #1f253d; backdrop-filter: blur(5px); display: flex; gap: 8px; }
+        .hud-card { background: rgba(5, 6, 10, 0.9); padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; border: 2px solid #1f253d; backdrop-filter: blur(5px); display: flex; gap: 8px; }
         
-        #leaderboard { position: absolute; top: 80px; right: 15px; background: rgba(5, 6, 10, 0.85); border: 2px solid #2c3558; border-radius: 12px; padding: 12px; width: 180px; font-size: 0.8rem; pointer-events: none; z-index: 5; }
+        #leaderboard { position: absolute; top: 80px; right: 15px; background: rgba(5, 6, 10, 0.9); border: 2px solid #2c3558; border-radius: 12px; padding: 12px; width: 180px; font-size: 0.8rem; pointer-events: none; z-index: 5; }
         #leaderboard h3 { color: #ffaa00; margin-bottom: 6px; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #2c3558; padding-bottom: 4px; }
         .rank-item { display: flex; justify-content: space-between; margin: 4px 0; font-weight: bold; }
 
         /* 🚪 홈 페이지 스크린 */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #05060a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 20; padding: 20px; overflow-y: auto; }
-        .game-title { font-size: 2.8rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 15px rgba(0,255,204,0.3)); line-height: 1.1; margin-bottom: 10px; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #030407 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; z-index: 20; padding: 20px; overflow-y: auto; }
+        .game-title { font-size: 3rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055, #ffaa00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 20px rgba(0,255,204,0.4)); line-height: 1.0; margin-bottom: 5px; }
+        #homeHighScore { font-size: 1.1rem; color: #ffaa00; font-weight: bold; text-shadow: 0 2px 8px rgba(255,170,0,0.3); margin-top: 5px; }
         
-        .home-container { width: 100%; max-width: 400px; background: rgba(15, 19, 36, 0.7); border: 2px solid #1f253d; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .info-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; font-size: 0.9rem; }
-        .info-label { color: #636b8f; font-weight: bold; }
-        .info-value { font-weight: 900; color: #fff; }
+        .home-container { width: 100%; max-width: 420px; background: rgba(15, 19, 36, 0.8); border: 2px solid #2c3558; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         
-        .rule-box { background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #ff0055; font-size: 0.8rem; line-height: 1.5; color: #b4b9d0; }
-        .rule-title { font-weight: 900; color: #ff0055; margin-bottom: 4px; font-size: 0.85rem; }
+        /* 🎨 커스터마이징 영역 */
+        .custom-section { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid #1f253d; display: flex; flex-direction: column; gap: 12px; }
+        .nick-input { background: rgba(255,255,255,0.05); border: 2px solid #2c3558; color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold; text-align: center; outline: none; transition: 0.2s; }
+        .nick-input:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        
+        .color-picker-key { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #8a91b4; font-weight: bold; }
+        .color-preview { width: 30px; height: 30px; border-radius: 6px; border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .color-slider { flex: 1; -webkit-appearance: none; background: linear-gradient(to right, hsl(0,100%,60%), hsl(60,100%,60%), hsl(120,100%,60%), hsl(180,100%,60%), hsl(240,100%,60%), hsl(300,100%,60%), hsl(360,100%,60%)); height: 8px; border-radius: 4px; outline: none; cursor: pointer; }
+        .color-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); cursor: pointer; }
 
-        /* 버튼 디자인 프로필 */
+        /* 🌐 서버 선택 영역 */
+        .server-section { display: flex; flex-direction: column; gap: 8px; }
+        .server-title { font-size: 0.9rem; font-weight: 900; color: #00ffcc; margin-left: 5px; }
+        .server-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .server-btn { background: #1a1f31; border: 2px solid #2c3558; color: #8a91b4; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; text-align: center; transition: 0.2s; position: relative; }
+        .server-btn:hover { background: #2c3558; color: #fff; }
+        .server-btn.active { background: rgba(0,255,204,0.1); border-color: #00ffcc; color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+        .server-ping { position: absolute; top: 4px; right: 6px; font-size: 0.65rem; color: #00ff66; font-weight: 900; }
+
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
-        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 24px; font-size: 1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.1); transition: 0.2s; width: 100%; }
-        .login-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
-        
-        /* 👤 [신규] 게스트 버튼 스타일 */
-        .guest-btn { background: linear-gradient(135deg, #2c3558, #1a1f31); color: #00ffcc; border: 2px solid #2c3558; }
-        .guest-btn:hover { background: #2c3558; color: #fff; border-color: #00ffcc; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,204,0.2); }
+        .main-btn { background: #ffffff; color: #111; border: none; padding: 15px 24px; font-size: 1.1rem; font-weight: 900; border-radius: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 6px 25px rgba(255,255,255,0.2); transition: 0.2s; width: 100%; }
+        .main-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
+        .google-btn { border: 2px solid #fff; }
+        .start-btn { background: linear-gradient(90deg, #ff0055, #ffaa00); color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); box-shadow: 0 6px 25px rgba(255,0,85,0.4); }
+        .start-btn:hover { box-shadow: 0 8px 30px rgba(255,0,85,0.6); }
+
+        /* 가이드 팝업 */
+        #guidePopup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 19, 36, 0.95); border: 3px solid #ff0055; border-radius: 16px; padding: 25px; width: 90%; max-width: 380px; z-index: 100; display: none; backdrop-filter: blur(10px); box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .rule-box { background: rgba(0, 0, 0, 0.4); padding: 15px; border-radius: 8px; font-size: 0.85rem; line-height: 1.6; color: #b4b9d0; margin-bottom: 15px; border-left: 4px solid #ff0055; }
+        .close-popup { background: #ff0055; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; float: right; }
     </style>
 
-    <!-- 🌟 SDK 로드 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -60,54 +75,69 @@
 </head>
 <body>
 
-    <!-- 🚪 홈 페이지 화면 -->
     <div class="overlay" id="loginGate">
-        <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.3rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:3px;">ONLINE PRO</span></h1>
+        <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.4rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:4px;">갓겜 패치 에디션</span></h1>
+        <!-- 🛠️ 버그 수정: 스크립트에서 참조할 최고 기록 표기용 태그 추가 -->
+        <p id="homeHighScore">0 KILLS</p> 
         
         <div class="home-container">
-            <!-- 🎮 게임 규칙 안내 -->
-            <div class="rule-box">
-                <div class="rule-title">💀 경기 규칙 (죽음의 기준)</div>
-                1. 일반 상태에서 대시 상태인 적에게 박히면 **즉사**합니다.<br>
-                2. 적에게 밀려 **외곽의 빨간색 일렉트릭 월**에 닿으면 즉사합니다.<br>
-                3. 사망 시 현재 연속 킬 스코어는 **0으로 리셋**됩니다.
+            <div class="custom-section">
+                <input type="text" id="nickInput" class="nick-input" placeholder="닉네임 입력 (최대 8자)" maxlength="8">
+                <div class="color-picker-key">
+                    <span>캐릭터 색상</span>
+                    <div id="colorPreview" class="color-preview"></div>
+                    <input type="range" id="colorSlider" class="color-slider" min="0" max="360" value="180">
+                </div>
             </div>
 
-            <div class="rule-box" style="border-left-color: #00ffcc;">
-                <div class="rule-title" style="color: #00ffcc;">🕹️ 조작 방법</div>
-                • **모바일:** 왼쪽 패드로 이동, 오른쪽 DASH 버튼 터치<br>
-                • **PC 키보드:** WASD 또는 방향키 이동, Spacebar 대시
-            </div>
-
-            <!-- 📊 개인 로컬 기록 미리보기 -->
-            <div class="info-row">
-                <span class="info-label">내 최고 스코어</span>
-                <span class="info-value" id="homeHighScore" style="color: #ffaa00;">0 KILLS</span>
+            <div class="server-section">
+                <div class="server-title">🌐 서버(채널) 선택</div>
+                <div class="server-grid">
+                    <div class="server-btn active" onclick="selectServer(1, this)">서버 1 <span class="server-ping">ONLINE</span></div>
+                    <div class="server-btn" onclick="selectServer(2, this)">서버 2</div>
+                    <div class="server-btn" onclick="selectServer(3, this)">서버 3</div>
+                    <div class="server-btn" onclick="selectServer(4, this)">서버 4</div>
+                    <div class="server-btn" onclick="selectServer(5, this)">서버 5</div>
+                    <div class="server-btn" style="color:#555; border-color:#222; cursor:default;">준비중</div>
+                </div>
             </div>
             
-            <!-- 버튼 그룹 -->
             <div class="btn-group">
-                <button class="login-btn" onclick="handleGoogleLogin()">
+                <button class="main-btn start-btn" onclick="handleStartGame()">
+                    🎮 게임 시작 (전장 난입)
+                </button>
+                <button class="main-btn google-btn" onclick="handleGoogleLogin()">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="18" alt="G">
-                    Google 계정으로 로그인
+                    Google 최고기록 연동
                 </button>
-                <!-- 👤 게스트 진입 버튼 추가 -->
-                <button class="login-btn guest-btn" onclick="handleGuestLogin()">
-                    🎮 로그인 없이 게스트로 플레이
-                </button>
+                <span style="color: #636b8f; font-size: 0.8rem; text-align: center; cursor: pointer; text-decoration: underline;" onclick="toggleGuide(true)">게임 규칙 및 조작법 보기</span>
             </div>
         </div>
+        <p style="color: #444; font-size: 0.7rem;">Marstai Web Studio / PubNub Pro</p>
     </div>
 
-    <!-- 🎮 메인 게임판 -->
+    <div id="guidePopup">
+        <div class="rule-box">
+            <b style="color:#ff0055;">💀 경기 규칙 (죽음의 기준)</b><br>
+            1. 일반 상태에서 대시 상태인 적에게 박히면 **즉사**합니다.<br>
+            2. 적에게 밀려 **외곽의 빨간색 일렉트릭 월**에 닿으면 즉사합니다.<br>
+            3. 사망 시 현재 연속 킬 스코어는 **0으로 리셋**됩니다.
+        </div>
+        <div class="rule-box" style="border-left-color: #00ffcc;">
+            <b style="color:#00ffcc;">🕹️ 조작 방법</b><br>
+            • **모바일:** 왼쪽 패드로 이동, 오른쪽 DASH 버튼 터치<br>
+            • **PC 키보드:** WASD/방향키 이동, Spacebar 대시
+        </div>
+        <button class="close-popup" onclick="toggleGuide(false)">닫기</button>
+    </div>
+
     <div id="gameWrapper">
         <div id="hudZone">
-            <div class="hud-card" style="border-color: #00ffcc;">👥 서버: <span id="onlineCount" style="color:#00ffcc;">1</span>명</div>
+            <div class="hud-card" style="border-color: #00ffcc;">👥 <span id="serverNameDisp">서버 1</span>: <span id="onlineCount" style="color:#00ffcc;">1</span>명</div>
             <div class="hud-card" style="border-color: #ff3e6c;">🔥 현재 킬: <span id="currentKill" style="color:#ff3e6c;">0</span></div>
-            <div class="hud-card" style="border-color: #ffaa00;">🏆 최고기록: <span id="myHighScore" style="color:#ffaa00;">0</span></div>
+            <div class="hud-card" style="border-color: #ffaa00;">🏆 최고: <span id="myHighScore" style="color:#ffaa00;">0</span></div>
         </div>
 
-        <!-- 🏅 실시간 랭킹 보드 -->
         <div id="leaderboard">
             <h3>🔥 실시간 TOP 5</h3>
             <div id="rankList"></div>
@@ -139,15 +169,10 @@
         const db = firebase.database();
 
         let pubnub = null;
-        const CHANNEL_NAME = "bumper_square_firebase_edition";
-
-        const canvas = document.getElementById('arenaCanvas');
-        const ctx = canvas.getContext('2d');
-        const wrapper = document.getElementById('gameWrapper');
-        
+        let CHANNEL_NAME = "bumper_square_server_1"; 
         let myId = "";
-        let myName = "Guest"; 
-        let myColor = `hsl(${Math.random() * 360}, 100%, 60%)`;
+        let myName = ""; 
+        let myColor = "";
         const ARENA_SIZE = 1600; 
 
         let remotePlayers = {};  
@@ -160,21 +185,58 @@
         let savedHighScore = 0;
         let lastAttackerId = null; 
         let lastAttackedTime = 0;
-        let isGuestMode = false; // 게스트 구분 플래그
+        let isGuestMode = true; 
         
         let isDashing = false, dashTimer = 0, dashCooldown = 0, dashGauge = 100;
         let touchStartPos = null, moveDir = { x: 0, y: 0 };
 
+        const canvas = document.getElementById('arenaCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('gameWrapper');
+        const nickInput = document.getElementById('nickInput');
+        const colorSlider = document.getElementById('colorSlider');
+        const colorPreview = document.getElementById('colorPreview');
+
+        // --- 🎨 커스터마이징 로직 ---
         window.addEventListener('DOMContentLoaded', () => {
             const localRecord = localStorage.getItem('bumper_highscore') || 0;
-            document.getElementById('homeHighScore').innerText = `${localRecord} KILLS`;
+            const localNick = localStorage.getItem('bumper_nick') || "Guest_" + Math.floor(Math.random() * 900 + 100);
+            const localHue = localStorage.getItem('bumper_hue') || Math.floor(Math.random() * 360);
+
+            // 안전한 예외 처리 분기 연동
+            const scoreDisp = document.getElementById('homeHighScore');
+            if(scoreDisp) scoreDisp.innerText = `${localRecord} KILLS`;
+            
+            nickInput.value = localNick;
+            colorSlider.value = localHue;
+            updateColorPreview(localHue);
         });
+
+        colorSlider.addEventListener('input', (e) => updateColorPreview(e.target.value));
+
+        function updateColorPreview(hue) {
+            myColor = `hsl(${hue}, 100%, 60%)`;
+            colorPreview.style.backgroundColor = myColor;
+            localStorage.setItem('bumper_hue', hue);
+        }
+
+        // --- 🌐 서버 선택 로직 ---
+        function selectServer(serverNum, btnElem) {
+            document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+            btnElem.classList.add('active');
+            
+            CHANNEL_NAME = `bumper_square_server_${serverNum}`;
+            document.getElementById('serverNameDisp').innerText = `서버 ${serverNum}`;
+        }
+
+        function toggleGuide(show) {
+            document.getElementById('guidePopup').style.display = show ? 'block' : 'none';
+        }
 
         function spawn() {
             myX = Math.random() * (ARENA_SIZE - 400) + 200;
             myY = Math.random() * (ARENA_SIZE - 400) + 200;
-            myVx = 0;
-            myVy = 0;
+            myVx = 0; myVy = 0;
             lastAttackerId = null;
         }
 
@@ -187,7 +249,6 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // 🚪 공통 진입 프로세스
         function enterGame() {
             document.getElementById('loginGate').style.display = 'none';
             document.getElementById('gameWrapper').style.display = 'block';
@@ -196,12 +257,20 @@
             initLeaderboard();
         }
 
-        // --- 👤 [신규] 게스트 플레이 로그인 ---
-        function handleGuestLogin() {
-            isGuestMode = true;
-            myId = "guest_" + Math.random().toString(36).substr(2, 9); // 임의 고유식별ID 생성
-            myName = "Guest_" + Math.floor(Math.random() * 900 + 100); // Guest_432 형태 명명
-            
+        // --- 👤 게임 플레이 세션 초기화 ---
+        function handleStartGame() {
+            myName = nickInput.value.trim() || "Guest_" + Math.floor(Math.random() * 900 + 100);
+            localStorage.setItem('bumper_nick', myName);
+
+            // 구글 로그인이 된 상태라면 고유 uid를 소유권 ID로 활용하도록 유연화
+            if (auth.currentUser) {
+                isGuestMode = false;
+                myId = auth.currentUser.uid;
+            } else {
+                isGuestMode = true;
+                myId = "guest_" + Math.random().toString(36).substr(2, 9);
+            }
+
             savedHighScore = parseInt(localStorage.getItem('bumper_highscore')) || 0;
             document.getElementById('myHighScore').innerText = savedHighScore;
             
@@ -209,26 +278,34 @@
             initPubNub();
         }
 
-        // --- 🔐 구글 로그인 및 데이터 로드 ---
+        // --- 🔐 구글 로그인 (실시간 통합 동기화 고도화) ---
         function handleGoogleLogin() {
-            isGuestMode = false;
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then((result) => {
                 const user = result.user;
-                myId = user.uid;
-                myName = user.displayName || "Unknown";
+                nickInput.value = user.displayName || "Unknown";
                 
-                enterGame();
-
-                db.ref(`users/${myId}`).once('value', (snapshot) => {
+                db.ref(`users/${user.uid}`).once('value', (snapshot) => {
+                    let remoteScore = 0;
+                    const localScore = parseInt(localStorage.getItem('bumper_highscore')) || 0;
+                    
                     if(snapshot.exists()) {
-                        savedHighScore = snapshot.val().highScore || 0;
-                    } else {
-                        db.ref(`users/${myId}`).set({ name: myName, highScore: 0 });
+                        remoteScore = snapshot.val().highScore || 0;
                     }
-                    document.getElementById('myHighScore').innerText = savedHighScore;
-                    localStorage.setItem('bumper_highscore', savedHighScore); 
-                    initPubNub();
+                    
+                    // 기기 기록과 서버 클라우드 기록 중 더 높은 쪽으로 합산 갱신
+                    const finalMaxScore = Math.max(remoteScore, localScore);
+                    localStorage.setItem('bumper_highscore', finalMaxScore);
+                    
+                    const scoreDisp = document.getElementById('homeHighScore');
+                    if(scoreDisp) scoreDisp.innerText = `${finalMaxScore} KILLS`;
+
+                    db.ref(`users/${user.uid}`).set({ 
+                        name: user.displayName || "Unknown", 
+                        highScore: finalMaxScore 
+                    });
+                    
+                    alert("구글 계정과 최고기록이 성공적으로 동기화되었습니다! '게임 시작'을 눌러주세요.");
                 });
             }).catch(err => alert("로그인 실패: " + err.message));
         }
@@ -258,14 +335,13 @@
                 document.getElementById('myHighScore').innerText = savedHighScore;
                 localStorage.setItem('bumper_highscore', savedHighScore);
                 
-                // 구글 로그인 유저일 때만 파이어베이스 실시간 데이터베이스 보드 전송 업데이트
-                if(!isGuestMode && myId) {
-                    db.ref(`users/${myId}`).update({ highScore: savedHighScore });
+                if(auth.currentUser) {
+                     db.ref(`users/${auth.currentUser.uid}`).update({ highScore: savedHighScore, name: myName });
                 }
             }
         }
 
-        // --- 🌐 멀티플레이 P2P 세션 연동 ---
+        // --- 🌐 멀티플레이 PubNub 연동 세션 ---
         function initPubNub() {
             pubnub = new PubNub({
                 publishKey: 'pub-c-5bfa23f4-2eb9-4695-a8db-cc1b827cead6',
@@ -284,6 +360,13 @@
                         } else if (packet.type === "sync") {
                             packet.lastSeen = Date.now(); 
                             remotePlayers[packet.id] = packet; 
+                        } else if (packet.type === "bumped" && packet.targetId === myId) {
+                            myVx = packet.forceX;
+                            myVy = packet.forceY;
+                            screenShake = packet.shake;
+                            lastAttackerId = packet.id;
+                            lastAttackedTime = Date.now();
+                            createParticles(myX, myY, '#ffffff', 8, 5);
                         }
                     }
                 }
@@ -291,11 +374,11 @@
 
             pubnub.subscribe({ channels: [CHANNEL_NAME] });
             
-            setInterval(broadcastPosition, 45);
+            setInterval(broadcastPosition, 80);
             setInterval(() => {
                 let now = Date.now();
                 Object.keys(remotePlayers).forEach(id => { 
-                    if (now - remotePlayers[id].lastSeen > 3000) delete remotePlayers[id]; 
+                    if (now - remotePlayers[id].lastSeen > 3500) delete remotePlayers[id]; 
                 });
             }, 3000);
             
@@ -320,7 +403,7 @@
             if(lastAttackerId && Date.now() - lastAttackedTime < 2500) {
                 pubnub.publish({
                     channel: CHANNEL_NAME,
-                    message: { type: "killed", id: lastAttackerId, targetId: lastAttackerId, killerOf: myId }
+                    message: { type: "killed", id: myId, targetId: lastAttackerId, killerOf: myId }
                 });
             }
 
@@ -390,6 +473,10 @@
                 if(dist < minDist) {
                     let angle = Math.atan2(myY - other.y, myX - other.x);
                     
+                    let overlap = minDist - dist;
+                    myX += Math.cos(angle) * (overlap / 2);
+                    myY += Math.sin(angle) * (overlap / 2);
+
                     if(!isDashing && other.isDashing) {
                         die();
                         pubnub.publish({
@@ -398,25 +485,50 @@
                         });
                     } 
                     else if(isDashing && !other.isDashing) {
-                        let pushForce = 35;
-                        myVx = Math.cos(angle) * pushForce;
-                        myVy = Math.sin(angle) * pushForce;
+                        let pushForce = 40; 
+                        pubnub.publish({
+                            channel: CHANNEL_NAME,
+                            message: {
+                                type: "bumped",
+                                id: myId,
+                                targetId: other.id,
+                                forceX: -Math.cos(angle) * pushForce,
+                                forceY: -Math.sin(angle) * pushForce,
+                                shake: 18 
+                            }
+                        });
+                        myVx = Math.cos(angle) * 12;
+                        myVy = Math.sin(angle) * 12;
                         screenShake = 15;
-                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 15, 10);
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 20, 12);
                     }
                     else if(isDashing && other.isDashing) {
-                        let bounce = 25;
+                        let bounce = 32;
                         myVx = Math.cos(angle) * bounce;
                         myVy = Math.sin(angle) * bounce;
-                        screenShake = 20;
-                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffff00', 30, 15);
+                        screenShake = 25;
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffff00', 35, 18);
                     }
                     else {
-                        let push = 4;
-                        myVx = Math.cos(angle) * push;
-                        myVy = Math.sin(angle) * push;
+                        let bumpForce = 18; 
+                        myVx = Math.cos(angle) * bumpForce;
+                        myVy = Math.sin(angle) * bumpForce;
+                        
+                        pubnub.publish({
+                            channel: CHANNEL_NAME,
+                            message: {
+                                type: "bumped",
+                                id: myId,
+                                targetId: other.id,
+                                forceX: -Math.cos(angle) * bumpForce,
+                                forceY: -Math.sin(angle) * bumpForce,
+                                shake: 6
+                            }
+                        });
+                        
                         lastAttackerId = other.id; 
                         lastAttackedTime = Date.now();
+                        createParticles((myX+other.x)/2, (myY+other.y)/2, '#636b8f', 5, 4);
                     }
                 }
             });
@@ -431,7 +543,7 @@
 
             if (screenShake > 0) {
                 let dx = (Math.random() - 0.5) * screenShake, dy = (Math.random() - 0.5) * screenShake;
-                wrapper.style.transform = `translate(${dx}px, ${dy}px)`; screenShake *= 0.95;
+                wrapper.style.transform = `translate(${dx}px, ${dy}px)`; screenShake *= 0.94;
                 if(screenShake < 0.5) { screenShake = 0; wrapper.style.transform = 'translate(0px, 0px)'; }
             }
 
@@ -453,8 +565,11 @@
                 ctx.fillText(`${p.name} [${p.score}K]`, p.x, p.y - p.size - 10);
             });
 
+            ctx.shadowBlur = 15; ctx.shadowColor = myColor;
             if(isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(myX - mySize - 6, myY - mySize - 6, mySize * 2 + 12, mySize * 2 + 12); }
             else { ctx.fillStyle = myColor; ctx.fillRect(myX - mySize, myY - mySize, mySize * 2, mySize * 2); }
+            ctx.shadowBlur = 0; 
+            
             ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`${myName} (나)`, myX, myY - mySize - 10);
 
