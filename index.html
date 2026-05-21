@@ -30,11 +30,20 @@
         #leaderboard h3 { color: #ffaa00; margin-bottom: 6px; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #2c3558; padding-bottom: 4px; }
         .rank-item { display: flex; justify-content: space-between; margin: 4px 0; font-weight: bold; }
 
-        /* 🚪 구글 로그인 게이트 스크린 */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #05060a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 25px; z-index: 20; }
-        .game-title { font-size: 2.8rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 15px rgba(0,255,204,0.3)); }
+        /* 🚪 [업그레이드된 홈 페이지 스크린] */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #05060a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 20; padding: 20px; overflow-y: auto; }
+        .game-title { font-size: 2.8rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 15px rgba(0,255,204,0.3)); line-height: 1.1; margin-bottom: 10px; }
         
-        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.15); transition: 0.2s; }
+        /* 📜 홈 가이드 및 프로필 박스 */
+        .home-container { width: 100%; max-width: 400px; background: rgba(15, 19, 36, 0.7); border: 2px solid #1f253d; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .info-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; font-size: 0.9rem; }
+        .info-label { color: #636b8f; font-weight: bold; }
+        .info-value { font-weight: 900; color: #fff; }
+        
+        .rule-box { background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #ff0055; font-size: 0.8rem; line-height: 1.5; color: #b4b9d0; }
+        .rule-title { font-weight: 900; color: #ff0055; margin-bottom: 4px; font-size: 0.85rem; }
+
+        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.15); transition: 0.2s; width: 100%; margin-top: 5px; }
         .login-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
     </style>
 
@@ -46,16 +55,36 @@
 </head>
 <body>
 
-    <!-- 🚪 로그인 화면 -->
+    <!-- 🚪 홈 페이지 화면 -->
     <div class="overlay" id="loginGate">
-        <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.4rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:3px;">REALTIME RANKING</span></h1>
-        <p style="color: #636b8f; font-size: 0.9rem; text-align: center; max-width: 280px; font-weight: bold; line-height: 1.5;">
-            🔒 전 세계 유저와 실시간 점수 연동!<br>대시로 상대를 밀어내어 파괴하세요!
-        </p>
-        <button class="login-btn" onclick="handleGoogleLogin()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
-            Google 계정으로 로그인
-        </button>
+        <h1 class="game-title">BUMPER SQUARE<br><span style="font-size:1.3rem; color:#fff; -webkit-text-fill-color:initial; letter-spacing:3px;">ONLINE PRO</span></h1>
+        
+        <div class="home-container">
+            <!-- 🎮 게임 규칙 안내 -->
+            <div class="rule-box">
+                <div class="rule-title">💀 경기 규칙 (죽음의 기준)</div>
+                1. 일반 상태에서 대시 상태인 적에게 박히면 **즉사**합니다.<br>
+                2. 적에게 밀려 **외곽의 빨간색 일렉트릭 월**에 닿으면 즉사합니다.<br>
+                3. 사망 시 현재 연속 킬 스코어는 **0으로 리셋**됩니다.
+            </div>
+
+            <div class="rule-box" style="border-left-color: #00ffcc;">
+                <div class="rule-title" style="color: #00ffcc;">🕹️ 조작 방법</div>
+                • **모바일:** 왼쪽 패드로 이동, 오른쪽 DASH 버튼 터치<br>
+                • **PC 키보드:** WASD 또는 방향키 이동, Spacebar 대시
+            </div>
+
+            <!-- 📊 개인 로컬 기록 미리보기 -->
+            <div class="info-row">
+                <span class="info-label">내 최고 스코어</span>
+                <span class="info-value" id="homeHighScore" style="color: #ffaa00;">0 KILLS</span>
+            </div>
+            
+            <button class="login-btn" onclick="handleGoogleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
+                Google 계정으로 로그인
+            </button>
+        </div>
     </div>
 
     <!-- 🎮 메인 게임판 -->
@@ -117,11 +146,17 @@
         let myVx = 0, myVy = 0, mySize = 22;
         let currentKillScore = 0;
         let savedHighScore = 0;
-        let lastAttackerId = null; // 맵 밖으로 밀려 죽었을 때 킬 카운트를 제공하기 위함
+        let lastAttackerId = null; 
         let lastAttackedTime = 0;
         
         let isDashing = false, dashTimer = 0, dashCooldown = 0, dashGauge = 100;
         let touchStartPos = null, moveDir = { x: 0, y: 0 };
+
+        // 페이지 로드 시 로컬 스토리지에 임시 저장된 이전 최고 점수가 있다면 홈 화면에 보여주기
+        window.addEventListener('DOMContentLoaded', () => {
+            const localRecord = localStorage.getItem('bumper_highscore') || 0;
+            document.getElementById('homeHighScore').innerText = `${localRecord} KILLS`;
+        });
 
         function spawn() {
             myX = Math.random() * (ARENA_SIZE - 400) + 200;
@@ -160,6 +195,7 @@
                         db.ref(`users/${myId}`).set({ name: myName, highScore: 0 });
                     }
                     document.getElementById('myHighScore').innerText = savedHighScore;
+                    localStorage.setItem('bumper_highscore', savedHighScore); // 로컬 캐싱
                     initPubNub();
                 });
 
@@ -190,6 +226,7 @@
             if (currentKillScore > savedHighScore) {
                 savedHighScore = currentKillScore;
                 document.getElementById('myHighScore').innerText = savedHighScore;
+                localStorage.setItem('bumper_highscore', savedHighScore);
                 db.ref(`users/${myId}`).update({ highScore: savedHighScore });
             }
         }
@@ -209,7 +246,6 @@
                         if (packet.type === "quit") {
                             delete remotePlayers[packet.id];
                         } else if (packet.type === "killed" && packet.targetId === myId) {
-                            // 💀 타인이 "내가 널 죽였어" 라고 패킷을 보냈을 때 처리
                             die();
                         } else if (packet.type === "sync") {
                             packet.lastSeen = Date.now(); 
@@ -247,11 +283,10 @@
             createParticles(myX, myY, myColor, 60, 20); 
             createParticles(myX, myY, '#ffffff', 20, 10);
             
-            // 만약 벽으로 밀려 죽었는데 직전 타격자가 있다면 그 사람에게 킬 전송
             if(lastAttackerId && Date.now() - lastAttackedTime < 2500) {
                 pubnub.publish({
                     channel: CHANNEL_NAME,
-                    message: { type: "killed", id: lastAttackerId, targetId: lastAttackerId, killerOf: myId } // 트리거링 유도
+                    message: { type: "killed", id: lastAttackerId, targetId: lastAttackerId, killerOf: myId }
                 });
             }
 
@@ -290,7 +325,6 @@
         }
 
         function updatePhysics() {
-            // 게이지 회복
             if(!isDashing && dashGauge < 100) { dashGauge = Math.min(100, dashGauge + 0.8); }
             document.getElementById('dashBarFill').style.width = `${dashGauge}%`;
 
@@ -307,7 +341,6 @@
             myVx += (targetVx - myVx) * 0.09; myVy += (targetVy - myVy) * 0.09;
             myX += myVx; myY += myVy;
 
-            // 🧱 죽음의 기준 1: 경기장 외부 일렉트릭 월에 충돌 시 즉사
             if(myX < mySize || myX > ARENA_SIZE - mySize || myY < mySize || myY > ARENA_SIZE - mySize) {
                 die();
                 return;
@@ -315,7 +348,6 @@
 
             if(dashCooldown > 0) dashCooldown--;
 
-            // 충돌 감지 알고리즘
             Object.values(remotePlayers).forEach(other => {
                 if(other.type !== "sync") return;
                 let dist = Math.hypot(myX - other.x, myY - other.y);
@@ -324,16 +356,13 @@
                 if(dist < minDist) {
                     let angle = Math.atan2(myY - other.y, myX - other.x);
                     
-                    // 💀 죽음의 기준 2: 상대는 대시 중인데 나는 일반 상태일 때 -> 패배(사망)
                     if(!isDashing && other.isDashing) {
                         die();
-                        // 공격 성공한 상대방에게 킬 포인트를 주도록 신호 발행
                         pubnub.publish({
                             channel: CHANNEL_NAME,
                             message: { type: "killed", id: myId, targetId: other.id }
                         });
                     } 
-                    // 내가 대시로 상대를 들이 받았을 때 (상대는 일반 상태) -> 상대방을 강하게 밀쳐냄
                     else if(isDashing && !other.isDashing) {
                         let pushForce = 35;
                         myVx = Math.cos(angle) * pushForce;
@@ -341,7 +370,6 @@
                         screenShake = 15;
                         createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffffff', 15, 10);
                     }
-                    // 동시 대시 충돌 -> 서로 크게 튕겨나감 (동반 생존)
                     else if(isDashing && other.isDashing) {
                         let bounce = 25;
                         myVx = Math.cos(angle) * bounce;
@@ -349,12 +377,11 @@
                         screenShake = 20;
                         createParticles((myX+other.x)/2, (myY+other.y)/2, '#ffff00', 30, 15);
                     }
-                    // 일반 상태끼리 비비기 -> 가볍게 밀어냄
                     else {
                         let push = 4;
                         myVx = Math.cos(angle) * push;
                         myVy = Math.sin(angle) * push;
-                        lastAttackerId = other.id; // 장외사를 위해 마지막 가격자 기록
+                        lastAttackerId = other.id; 
                         lastAttackedTime = Date.now();
                     }
                 }
@@ -377,16 +404,13 @@
             ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.save(); ctx.translate(-camX, -camY);
 
-            // 배경 격자선
             ctx.strokeStyle = '#111525'; ctx.lineWidth = 1.5;
             for(let x=0; x<=ARENA_SIZE; x+=100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_SIZE); ctx.stroke(); }
             for(let y=0; y<=ARENA_SIZE; y+=100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_SIZE, y); ctx.stroke(); }
 
-            // 치명적인 일렉트릭 레드 벽선
             ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 14; ctx.shadowBlur = 25; ctx.shadowColor = '#ff0055';
             ctx.strokeRect(0, 0, ARENA_SIZE, ARENA_SIZE); ctx.shadowBlur = 0; 
 
-            // 원격 적 플레이어 드로잉
             Object.values(remotePlayers).forEach(p => {
                 if(p.type !== "sync") return;
                 ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
@@ -395,34 +419,17 @@
                 ctx.fillText(`${p.name} [${p.score}K]`, p.x, p.y - p.size - 10);
             });
 
-            // 내 스퀘어 드로잉
             if(isDashing) { ctx.fillStyle = '#ffffff'; ctx.fillRect(myX - mySize - 6, myY - mySize - 6, mySize * 2 + 12, mySize * 2 + 12); }
             else { ctx.fillStyle = myColor; ctx.fillRect(myX - mySize, myY - mySize, mySize * 2, mySize * 2); }
             ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`${myName} (나)`, myX, myY - mySize - 10);
 
-            // 파티클 시스템 이펙트
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.025;
                 if(p.alpha <= 0) { particles.splice(i, 1); continue; }
                 ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
             }
             ctx.restore(); requestAnimationFrame(animate);
-        }
-
-        // 실시간 킬 판정 리스너 가로채기 (PubNub 통신 수신부 보강)
-        window.addEventListener('load', () => {
-            const originalListener = pubnub?.addListener;
-            // 위에서 인라인 선언으로 이미 구현되어 안전하게 수신됩니다.
-        });
-
-        // 내가 킬을 먹었을 때 처리기
-        function processKillMessage(packet) {
-            if(packet.type === "killed" && packet.targetId === myId) {
-                 // 내가 다른 상대를 대시로 깨부쉈을 때 실행됨
-                 currentKillScore++;
-                 checkAndSaveScore();
-            }
         }
 
         window.addEventListener('beforeunload', () => { if(pubnub && myId) pubnub.publish({ channel: CHANNEL_NAME, message: { id: myId, type: "quit" } }); });
