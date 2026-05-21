@@ -30,11 +30,10 @@
         #leaderboard h3 { color: #ffaa00; margin-bottom: 6px; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #2c3558; padding-bottom: 4px; }
         .rank-item { display: flex; justify-content: space-between; margin: 4px 0; font-weight: bold; }
 
-        /* 🚪 [업그레이드된 홈 페이지 스크린] */
+        /* 🚪 홈 페이지 스크린 */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #101424 0%, #05060a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 20; padding: 20px; overflow-y: auto; }
         .game-title { font-size: 2.8rem; font-weight: 950; text-align: center; background: linear-gradient(45deg, #00ffcc, #ff0055); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 15px rgba(0,255,204,0.3)); line-height: 1.1; margin-bottom: 10px; }
         
-        /* 📜 홈 가이드 및 프로필 박스 */
         .home-container { width: 100%; max-width: 400px; background: rgba(15, 19, 36, 0.7); border: 2px solid #1f253d; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .info-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; font-size: 0.9rem; }
         .info-label { color: #636b8f; font-weight: bold; }
@@ -43,8 +42,14 @@
         .rule-box { background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #ff0055; font-size: 0.8rem; line-height: 1.5; color: #b4b9d0; }
         .rule-title { font-weight: 900; color: #ff0055; margin-bottom: 4px; font-size: 0.85rem; }
 
-        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.15); transition: 0.2s; width: 100%; margin-top: 5px; }
+        /* 버튼 디자인 프로필 */
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
+        .login-btn { background: #ffffff; color: #1f1f1f; border: none; padding: 14px 24px; font-size: 1rem; font-weight: bold; border-radius: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.1); transition: 0.2s; width: 100%; }
         .login-btn:hover { background: #f1f1f1; transform: translateY(-2px); }
+        
+        /* 👤 [신규] 게스트 버튼 스타일 */
+        .guest-btn { background: linear-gradient(135deg, #2c3558, #1a1f31); color: #00ffcc; border: 2px solid #2c3558; }
+        .guest-btn:hover { background: #2c3558; color: #fff; border-color: #00ffcc; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,204,0.2); }
     </style>
 
     <!-- 🌟 SDK 로드 -->
@@ -80,10 +85,17 @@
                 <span class="info-value" id="homeHighScore" style="color: #ffaa00;">0 KILLS</span>
             </div>
             
-            <button class="login-btn" onclick="handleGoogleLogin()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
-                Google 계정으로 로그인
-            </button>
+            <!-- 버튼 그룹 -->
+            <div class="btn-group">
+                <button class="login-btn" onclick="handleGoogleLogin()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="18" alt="G">
+                    Google 계정으로 로그인
+                </button>
+                <!-- 👤 게스트 진입 버튼 추가 -->
+                <button class="login-btn guest-btn" onclick="handleGuestLogin()">
+                    🎮 로그인 없이 게스트로 플레이
+                </button>
+            </div>
         </div>
     </div>
 
@@ -148,11 +160,11 @@
         let savedHighScore = 0;
         let lastAttackerId = null; 
         let lastAttackedTime = 0;
+        let isGuestMode = false; // 게스트 구분 플래그
         
         let isDashing = false, dashTimer = 0, dashCooldown = 0, dashGauge = 100;
         let touchStartPos = null, moveDir = { x: 0, y: 0 };
 
-        // 페이지 로드 시 로컬 스토리지에 임시 저장된 이전 최고 점수가 있다면 홈 화면에 보여주기
         window.addEventListener('DOMContentLoaded', () => {
             const localRecord = localStorage.getItem('bumper_highscore') || 0;
             document.getElementById('homeHighScore').innerText = `${localRecord} KILLS`;
@@ -175,18 +187,38 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // 🚪 공통 진입 프로세스
+        function enterGame() {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('gameWrapper').style.display = 'block';
+            resize();
+            spawn();
+            initLeaderboard();
+        }
+
+        // --- 👤 [신규] 게스트 플레이 로그인 ---
+        function handleGuestLogin() {
+            isGuestMode = true;
+            myId = "guest_" + Math.random().toString(36).substr(2, 9); // 임의 고유식별ID 생성
+            myName = "Guest_" + Math.floor(Math.random() * 900 + 100); // Guest_432 형태 명명
+            
+            savedHighScore = parseInt(localStorage.getItem('bumper_highscore')) || 0;
+            document.getElementById('myHighScore').innerText = savedHighScore;
+            
+            enterGame();
+            initPubNub();
+        }
+
         // --- 🔐 구글 로그인 및 데이터 로드 ---
         function handleGoogleLogin() {
+            isGuestMode = false;
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then((result) => {
                 const user = result.user;
                 myId = user.uid;
                 myName = user.displayName || "Unknown";
                 
-                document.getElementById('loginGate').style.display = 'none';
-                document.getElementById('gameWrapper').style.display = 'block';
-                resize();
-                spawn();
+                enterGame();
 
                 db.ref(`users/${myId}`).once('value', (snapshot) => {
                     if(snapshot.exists()) {
@@ -195,11 +227,9 @@
                         db.ref(`users/${myId}`).set({ name: myName, highScore: 0 });
                     }
                     document.getElementById('myHighScore').innerText = savedHighScore;
-                    localStorage.setItem('bumper_highscore', savedHighScore); // 로컬 캐싱
+                    localStorage.setItem('bumper_highscore', savedHighScore); 
                     initPubNub();
                 });
-
-                initLeaderboard();
             }).catch(err => alert("로그인 실패: " + err.message));
         }
 
@@ -227,7 +257,11 @@
                 savedHighScore = currentKillScore;
                 document.getElementById('myHighScore').innerText = savedHighScore;
                 localStorage.setItem('bumper_highscore', savedHighScore);
-                db.ref(`users/${myId}`).update({ highScore: savedHighScore });
+                
+                // 구글 로그인 유저일 때만 파이어베이스 실시간 데이터베이스 보드 전송 업데이트
+                if(!isGuestMode && myId) {
+                    db.ref(`users/${myId}`).update({ highScore: savedHighScore });
+                }
             }
         }
 
